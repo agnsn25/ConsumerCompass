@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 import googlemaps
 import os
+import time
 from datetime import datetime
 
 # Initialize Google Maps client
@@ -60,71 +61,120 @@ def search_businesses(query, location=None):
             print(f"API Key Error: {message}")
             return pd.DataFrame()
 
-        # If location is not provided, use the query as is
+        # If location is provided, try to get its coordinates for better search
+        location_bias = None
         if location:
-            search_query = f"{query} in {location}"
+            try:
+                # Geocode the location to get coordinates
+                geocode_result = gmaps.geocode(location)
+                if geocode_result:
+                    lat = geocode_result[0]['geometry']['location']['lat']
+                    lng = geocode_result[0]['geometry']['location']['lng']
+                    location_bias = f"circle:50000@{lat},{lng}"  # 50km radius
+                    search_query = query
+                else:
+                    search_query = f"{query} in {location}"
+            except Exception as e:
+                print(f"Error geocoding location: {str(e)}")
+                search_query = f"{query} in {location}"
         else:
             search_query = query
 
         print(f"Searching for: {search_query}")
 
-        # Perform the places search
-        try:
-            places_result = gmaps.places(search_query)
-            print(f"Found {len(places_result.get('results', []))} results")
+        all_results = []
+        next_page_token = None
 
-            if not places_result.get('results'):
-                print("No results found in places search")
-                return pd.DataFrame()
+        # Determine if query contains "service" to set appropriate type
+        place_type = None
+        if 'service' in query.lower():
+            place_type = 'car_repair'
 
-            businesses = []
-            for place in places_result['results']:
-                try:
-                    # Get place details for more information
-                    place_details = gmaps.place(place['place_id'])['result']
+        # Get results with pagination
+        while True:
+            try:
+                # Prepare search parameters
+                search_params = {
+                    'query': search_query,
+                    'language': 'en',
+                }
+                if location_bias:
+                    search_params['location_bias'] = location_bias
+                if place_type:
+                    search_params['type'] = place_type
+                if next_page_token:
+                    search_params['page_token'] = next_page_token
 
-                    # Extract business data
-                    business = {
-                        'Business Name': place['name'],
-                        'Average Rating': place.get('rating', 0),
-                        'Total Reviews': place.get('user_ratings_total', 0),
-                        'Address': place.get('formatted_address', ''),
-                        'Place ID': place['place_id']
-                    }
+                # Perform the search
+                places_result = gmaps.places(**search_params)
 
-                    # Get rating distribution if available in details
-                    reviews = place_details.get('reviews', [])
-                    ratings = [review['rating'] for review in reviews]
+                # Process current page results
+                if places_result.get('results'):
+                    all_results.extend(places_result['results'])
+                    print(f"Found {len(places_result['results'])} results on current page")
 
-                    if ratings:
-                        total = len(ratings)
-                        business.update({
-                            '5_star': sum(1 for r in ratings if r == 5) / total * 100,
-                            '4_star': sum(1 for r in ratings if r == 4) / total * 100,
-                            '3_star': sum(1 for r in ratings if r == 3) / total * 100,
-                            '2_star': sum(1 for r in ratings if r == 2) / total * 100,
-                            '1_star': sum(1 for r in ratings if r == 1) / total * 100,
-                        })
-                    else:
-                        business.update({
-                            '5_star': 0,
-                            '4_star': 0,
-                            '3_star': 0,
-                            '2_star': 0,
-                            '1_star': 0,
-                        })
+                # Check for next page
+                next_page_token = places_result.get('next_page_token')
+                if not next_page_token:
+                    break
 
-                    businesses.append(business)
-                except Exception as e:
-                    print(f"Error processing place details for {place.get('name', 'unknown')}: {str(e)}")
-                    continue
+                # Wait briefly before requesting next page (API requirement)
+                time.sleep(2)
 
-            return pd.DataFrame(businesses)
-        except Exception as e:
-            print(f"Error in places search: {str(e)}")
-            if 'REQUEST_DENIED' in str(e):
-                print("Please ensure Places API is enabled in Google Cloud Console")
+            except Exception as e:
+                print(f"Error in places search: {str(e)}")
+                break
+
+        if not all_results:
+            print("No results found in places search")
             return pd.DataFrame()
+
+        print(f"Total results found: {len(all_results)}")
+
+        # Process all results
+        businesses = []
+        for place in all_results:
+            try:
+                # Get place details for more information
+                place_details = gmaps.place(place['place_id'])['result']
+
+                # Extract business data
+                business = {
+                    'Business Name': place['name'],
+                    'Average Rating': place.get('rating', 0),
+                    'Total Reviews': place.get('user_ratings_total', 0),
+                    'Address': place.get('formatted_address', ''),
+                    'Place ID': place['place_id']
+                }
+
+                # Get rating distribution if available in details
+                reviews = place_details.get('reviews', [])
+                ratings = [review['rating'] for review in reviews]
+
+                if ratings:
+                    total = len(ratings)
+                    business.update({
+                        '5_star': sum(1 for r in ratings if r == 5) / total * 100,
+                        '4_star': sum(1 for r in ratings if r == 4) / total * 100,
+                        '3_star': sum(1 for r in ratings if r == 3) / total * 100,
+                        '2_star': sum(1 for r in ratings if r == 2) / total * 100,
+                        '1_star': sum(1 for r in ratings if r == 1) / total * 100,
+                    })
+                else:
+                    business.update({
+                        '5_star': 0,
+                        '4_star': 0,
+                        '3_star': 0,
+                        '2_star': 0,
+                        '1_star': 0,
+                    })
+
+                businesses.append(business)
+            except Exception as e:
+                print(f"Error processing place details for {place.get('name', 'unknown')}: {str(e)}")
+                continue
+
+        return pd.DataFrame(businesses)
 
     except Exception as e:
         print(f"Error searching businesses: {str(e)}")
