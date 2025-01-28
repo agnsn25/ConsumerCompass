@@ -5,7 +5,12 @@ from data import get_review_highlights
 
 def display_business_metrics(data, business_name):
     """Display key metrics for a single business"""
-    business = data[data['Business Name'] == business_name].iloc[0]
+    business_data = data[data['Business Name'] == business_name]
+    if business_data.empty:
+        st.error(f"No data found for {business_name}")
+        return
+
+    business = business_data.iloc[0]
 
     col1, col2, col3 = st.columns(3)
 
@@ -19,7 +24,7 @@ def display_business_metrics(data, business_name):
         st.metric("5-Star Reviews", f"{business['5_star']:.1f}%")
 
     # Display address if available
-    if 'Address' in business:
+    if 'Address' in business and business['Address']:
         st.markdown(f"**Address:** {business['Address']}")
 
     st.plotly_chart(create_rating_distribution_chart(data, business_name), use_container_width=True)
@@ -31,6 +36,10 @@ def display_business_metrics(data, business_name):
 
 def display_comparison(data, business1, business2):
     """Display side-by-side comparison of two businesses"""
+    if business1 not in data['Business Name'].values or business2 not in data['Business Name'].values:
+        st.error("One or both selected businesses are not found in the filtered data. Try adjusting the minimum rating filter.")
+        return
+
     col1, col2 = st.columns(2)
 
     with col1:
