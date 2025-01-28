@@ -84,7 +84,8 @@ def search_businesses(query, location=None):
         # Determine if query contains "service" to set appropriate type
         place_type = None
         if 'service' in query.lower():
-            place_type = 'car_repair'
+            # Make type optional to get more results
+            place_type = None  # Removed car_repair restriction
 
         # Get results with pagination
         while True:
@@ -97,7 +98,7 @@ def search_businesses(query, location=None):
 
                 if search_location:
                     search_params['location'] = search_location
-                    search_params['radius'] = 50000  # 50km radius
+                    search_params['radius'] = 100000  # Increased to 100km radius
 
                 if place_type:
                     search_params['type'] = place_type
