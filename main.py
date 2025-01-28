@@ -71,12 +71,12 @@ if st.button("Search"):
                 st.error(error)
             else:
                 st.session_state.data = data
-                # Create business labels with name and address
-                st.session_state.business_labels = {
-                    name: f"{name} - {addr}" if addr else name
+                # Store original business names for lookup
+                st.session_state.business_lookup = {
+                    f"{name} - {addr}": name 
                     for name, addr in zip(data['Business Name'], data['Address'])
                 }
-                st.session_state.businesses = list(st.session_state.business_labels.values())
+                st.session_state.businesses = list(st.session_state.business_lookup.keys())
                 st.success(f"Found {len(data)} businesses!")
 
 # Business selection
@@ -89,19 +89,16 @@ if not st.session_state.data.empty:
             options=st.session_state.businesses,
             key='business1_label'
         )
-        # Extract business name from label
-        business1 = business1_label.split(" - ")[0].strip() if business1_label else None
+        business1 = st.session_state.business_lookup.get(business1_label) if business1_label else None
 
     with col2:
-        # Filter out first business from second dropdown
         remaining_businesses = [b for b in st.session_state.businesses if b != business1_label]
         business2_label = st.selectbox(
             "Select second business",
             options=remaining_businesses,
             key='business2_label'
         )
-        # Extract business name from label
-        business2 = business2_label.split(" - ")[0].strip() if business2_label else None
+        business2 = st.session_state.business_lookup.get(business2_label) if business2_label else None
 
     # Add a filter for minimum rating
     min_rating = st.slider(
@@ -117,7 +114,7 @@ if not st.session_state.data.empty:
         # Filter data based on minimum rating
         filtered_data = st.session_state.data[
             st.session_state.data['Average Rating'] >= min_rating
-        ].copy()  # Create a copy to avoid SettingWithCopyWarning
+        ].copy()
 
         # Display comparison
         display_comparison(filtered_data, business1, business2)

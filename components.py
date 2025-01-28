@@ -5,9 +5,9 @@ from data import get_review_highlights
 
 def display_business_metrics(data, business_name):
     """Display key metrics for a single business"""
-    business_data = data[data['Business Name'].str.strip() == business_name.strip()]
+    business_data = data[data['Business Name'] == business_name]
     if business_data.empty:
-        st.error(f"No data found for {business_name}")
+        st.error(f"Business '{business_name}' was filtered out due to the minimum rating requirement.")
         return
 
     business = business_data.iloc[0]
@@ -36,18 +36,17 @@ def display_business_metrics(data, business_name):
 
 def display_comparison(data, business1, business2):
     """Display side-by-side comparison of two businesses"""
-    # Strip whitespace for comparison
-    data['Business Name'] = data['Business Name'].str.strip()
-    business1 = business1.strip()
-    business2 = business2.strip()
+    # Check if businesses exist in the filtered data
+    business1_data = data[data['Business Name'] == business1]
+    business2_data = data[data['Business Name'] == business2]
 
-    # Check if businesses exist in the data
-    if business1 not in data['Business Name'].values or business2 not in data['Business Name'].values:
-        missing_businesses = []
-        if business1 not in data['Business Name'].values:
-            missing_businesses.append(business1)
-        if business2 not in data['Business Name'].values:
-            missing_businesses.append(business2)
+    missing_businesses = []
+    if business1_data.empty:
+        missing_businesses.append(business1)
+    if business2_data.empty:
+        missing_businesses.append(business2)
+
+    if missing_businesses:
         st.error(f"The following businesses were filtered out due to low rating: {', '.join(missing_businesses)}")
         st.info("Try adjusting the minimum rating filter to include these businesses.")
         return
