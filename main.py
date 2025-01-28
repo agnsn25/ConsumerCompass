@@ -44,17 +44,33 @@ with col1:
 with col2:
     location = st.text_input("Location (optional)", placeholder="e.g., San Francisco")
 
+@st.cache_data(ttl=300)
+def perform_business_search(query, location):
+    """Perform business search with caching and detailed error handling"""
+    try:
+        data = search_businesses(query, location)
+        if data.empty:
+            return None, "No businesses found. Please try a different search term or location."
+        return data, None
+    except Exception as e:
+        error_msg = str(e)
+        if 'REQUEST_DENIED' in error_msg:
+            return None, "API access denied. Please ensure the Places API is enabled and the API key is valid."
+        return None, f"Error searching businesses: {error_msg}"
+
+# Update the search button logic
 if st.button("Search"):
     if not search_query:
         st.warning("Please enter a search term")
     else:
         with st.spinner("Searching for businesses..."):
-            st.session_state.data = search_businesses(search_query, location)
-            if st.session_state.data.empty:
-                st.error("No businesses found. Try a different search term or location.")
+            data, error = perform_business_search(search_query, location)
+            if error:
+                st.error(error)
             else:
-                st.success(f"Found {len(st.session_state.data)} businesses!")
-                st.session_state.businesses = st.session_state.data['Business Name'].tolist()
+                st.session_state.data = data
+                st.session_state.businesses = data['Business Name'].tolist()
+                st.success(f"Found {len(data)} businesses!")
 
 # Business selection
 if not st.session_state.data.empty:
