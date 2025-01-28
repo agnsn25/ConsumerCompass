@@ -15,6 +15,8 @@ if 'data' not in st.session_state:
     st.session_state.data = pd.DataFrame()
 if 'businesses' not in st.session_state:
     st.session_state.businesses = []
+if 'business_labels' not in st.session_state:
+    st.session_state.business_labels = {}
 
 # App title and description
 st.title("📊 Business Review Comparison Tool")
@@ -69,7 +71,12 @@ if st.button("Search"):
                 st.error(error)
             else:
                 st.session_state.data = data
-                st.session_state.businesses = data['Business Name'].tolist()
+                # Create business labels with name and address
+                st.session_state.business_labels = {
+                    name: f"{name} - {addr}" if addr else name
+                    for name, addr in zip(data['Business Name'], data['Address'])
+                }
+                st.session_state.businesses = list(st.session_state.business_labels.values())
                 st.success(f"Found {len(data)} businesses!")
 
 # Business selection
@@ -77,20 +84,24 @@ if not st.session_state.data.empty:
     col1, col2 = st.columns(2)
 
     with col1:
-        business1 = st.selectbox(
+        business1_label = st.selectbox(
             "Select first business",
             options=st.session_state.businesses,
-            key='business1'
+            key='business1_label'
         )
+        # Extract business name from label
+        business1 = business1_label.split(" - ")[0] if business1_label else None
 
     with col2:
         # Filter out first business from second dropdown
-        remaining_businesses = [b for b in st.session_state.businesses if b != business1]
-        business2 = st.selectbox(
+        remaining_businesses = [b for b in st.session_state.businesses if b != business1_label]
+        business2_label = st.selectbox(
             "Select second business",
             options=remaining_businesses,
-            key='business2'
+            key='business2_label'
         )
+        # Extract business name from label
+        business2 = business2_label.split(" - ")[0] if business2_label else None
 
     # Add a filter for minimum rating
     min_rating = st.slider(
