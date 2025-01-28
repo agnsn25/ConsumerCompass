@@ -112,14 +112,20 @@ if not st.session_state.data.empty:
         step=0.5
     )
 
-    # Filter data based on minimum rating
-    filtered_data = st.session_state.data[
-        st.session_state.data['Average Rating'] >= min_rating
-    ]
-
-    # Display comparison
+    # First check if selected businesses exist in the original data
     if business1 and business2:
-        display_comparison(filtered_data, business1, business2)
+        business1_exists = business1 in st.session_state.data['Business Name'].values
+        business2_exists = business2 in st.session_state.data['Business Name'].values
+
+        if not business1_exists or not business2_exists:
+            st.error("One or both selected businesses could not be found in the data.")
+        else:
+            # Only filter data after confirming businesses exist
+            filtered_data = st.session_state.data[
+                st.session_state.data['Average Rating'] >= min_rating
+            ]
+            # Display comparison
+            display_comparison(filtered_data, business1, business2)
     else:
         st.info("Please select two businesses to compare")
 else:
