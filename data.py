@@ -81,27 +81,22 @@ def search_businesses(query, location=None):
         all_results = []
         next_page_token = None
 
-        # Determine if query contains "service" to set appropriate type
-        place_type = None
-        if 'service' in query.lower():
-            # Make type optional to get more results
-            place_type = None  # Removed car_repair restriction
+        # Split query into keywords for better matching
+        keywords = query.lower().split()
+        base_query = ' '.join(keywords)
 
         # Get results with pagination
         while True:
             try:
                 # Prepare search parameters
                 search_params = {
-                    'query': query,
+                    'query': base_query,
                     'language': 'en'
                 }
 
                 if search_location:
                     search_params['location'] = search_location
-                    search_params['radius'] = 100000  # Increased to 100km radius
-
-                if place_type:
-                    search_params['type'] = place_type
+                    search_params['radius'] = 150000  # Increased to 150km radius for wider coverage
 
                 if next_page_token:
                     search_params = {'page_token': next_page_token}
