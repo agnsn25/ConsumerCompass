@@ -61,26 +61,22 @@ def search_businesses(query, location=None):
             print(f"API Key Error: {message}")
             return pd.DataFrame()
 
-        # If location is provided, try to get its coordinates for better search
-        location_bias = None
+        # Set up location parameters
+        search_location = None
         if location:
             try:
                 # Geocode the location to get coordinates
                 geocode_result = gmaps.geocode(location)
                 if geocode_result:
-                    lat = geocode_result[0]['geometry']['location']['lat']
-                    lng = geocode_result[0]['geometry']['location']['lng']
-                    location_bias = f"circle:50000@{lat},{lng}"  # 50km radius
-                    search_query = query
-                else:
-                    search_query = f"{query} in {location}"
+                    search_location = {
+                        'lat': geocode_result[0]['geometry']['location']['lat'],
+                        'lng': geocode_result[0]['geometry']['location']['lng']
+                    }
+                    print(f"Using location coordinates: {search_location}")
             except Exception as e:
                 print(f"Error geocoding location: {str(e)}")
-                search_query = f"{query} in {location}"
-        else:
-            search_query = query
 
-        print(f"Searching for: {search_query}")
+        print(f"Searching for: {query}")
 
         all_results = []
         next_page_token = None
@@ -95,15 +91,21 @@ def search_businesses(query, location=None):
             try:
                 # Prepare search parameters
                 search_params = {
-                    'query': search_query,
-                    'language': 'en',
+                    'query': query,
+                    'language': 'en'
                 }
-                if location_bias:
-                    search_params['location_bias'] = location_bias
+
+                if search_location:
+                    search_params['location'] = search_location
+                    search_params['radius'] = 50000  # 50km radius
+
                 if place_type:
                     search_params['type'] = place_type
+
                 if next_page_token:
-                    search_params['page_token'] = next_page_token
+                    search_params = {'page_token': next_page_token}
+
+                print(f"Search parameters: {search_params}")
 
                 # Perform the search
                 places_result = gmaps.places(**search_params)
