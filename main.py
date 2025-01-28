@@ -15,8 +15,8 @@ if 'data' not in st.session_state:
     st.session_state.data = pd.DataFrame()
 if 'businesses' not in st.session_state:
     st.session_state.businesses = []
-if 'business_labels' not in st.session_state:
-    st.session_state.business_labels = {}
+if 'business_lookup' not in st.session_state:
+    st.session_state.business_lookup = {}
 
 # App title and description
 st.title("📊 Business Review Comparison Tool")
@@ -92,6 +92,7 @@ if not st.session_state.data.empty:
         business1 = st.session_state.business_lookup.get(business1_label) if business1_label else None
 
     with col2:
+        # Ensure second dropdown excludes the first selection
         remaining_businesses = [b for b in st.session_state.businesses if b != business1_label]
         business2_label = st.selectbox(
             "Select second business",
