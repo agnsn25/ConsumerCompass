@@ -112,6 +112,13 @@ if not st.session_state.data.empty:
 
     # Display comparison if both businesses are selected
     if business1 and business2:
+        # Print debug information
+        st.write("Debug Info:")
+        st.write(f"Business 1 Label: {business1_label}")
+        st.write(f"Business 1 Name: {business1}")
+        st.write(f"Business 2 Label: {business2_label}")
+        st.write(f"Business 2 Name: {business2}")
+
         # Filter data based on minimum rating
         filtered_data = st.session_state.data[
             st.session_state.data['Average Rating'] >= min_rating
