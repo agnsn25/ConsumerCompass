@@ -90,7 +90,7 @@ if not st.session_state.data.empty:
             key='business1_label'
         )
         # Extract business name from label
-        business1 = business1_label.split(" - ")[0] if business1_label else None
+        business1 = business1_label.split(" - ")[0].strip() if business1_label else None
 
     with col2:
         # Filter out first business from second dropdown
@@ -101,7 +101,7 @@ if not st.session_state.data.empty:
             key='business2_label'
         )
         # Extract business name from label
-        business2 = business2_label.split(" - ")[0] if business2_label else None
+        business2 = business2_label.split(" - ")[0].strip() if business2_label else None
 
     # Add a filter for minimum rating
     min_rating = st.slider(
@@ -112,20 +112,15 @@ if not st.session_state.data.empty:
         step=0.5
     )
 
-    # First check if selected businesses exist in the original data
+    # Display comparison if both businesses are selected
     if business1 and business2:
-        business1_exists = business1 in st.session_state.data['Business Name'].values
-        business2_exists = business2 in st.session_state.data['Business Name'].values
+        # Filter data based on minimum rating
+        filtered_data = st.session_state.data[
+            st.session_state.data['Average Rating'] >= min_rating
+        ].copy()  # Create a copy to avoid SettingWithCopyWarning
 
-        if not business1_exists or not business2_exists:
-            st.error("One or both selected businesses could not be found in the data.")
-        else:
-            # Only filter data after confirming businesses exist
-            filtered_data = st.session_state.data[
-                st.session_state.data['Average Rating'] >= min_rating
-            ]
-            # Display comparison
-            display_comparison(filtered_data, business1, business2)
+        # Display comparison
+        display_comparison(filtered_data, business1, business2)
     else:
         st.info("Please select two businesses to compare")
 else:

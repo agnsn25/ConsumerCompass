@@ -5,7 +5,7 @@ from data import get_review_highlights
 
 def display_business_metrics(data, business_name):
     """Display key metrics for a single business"""
-    business_data = data[data['Business Name'] == business_name]
+    business_data = data[data['Business Name'].str.strip() == business_name.strip()]
     if business_data.empty:
         st.error(f"No data found for {business_name}")
         return
@@ -36,8 +36,20 @@ def display_business_metrics(data, business_name):
 
 def display_comparison(data, business1, business2):
     """Display side-by-side comparison of two businesses"""
+    # Strip whitespace for comparison
+    data['Business Name'] = data['Business Name'].str.strip()
+    business1 = business1.strip()
+    business2 = business2.strip()
+
+    # Check if businesses exist in the data
     if business1 not in data['Business Name'].values or business2 not in data['Business Name'].values:
-        st.error("One or both selected businesses are not found in the filtered data. Try adjusting the minimum rating filter.")
+        missing_businesses = []
+        if business1 not in data['Business Name'].values:
+            missing_businesses.append(business1)
+        if business2 not in data['Business Name'].values:
+            missing_businesses.append(business2)
+        st.error(f"The following businesses were filtered out due to low rating: {', '.join(missing_businesses)}")
+        st.info("Try adjusting the minimum rating filter to include these businesses.")
         return
 
     col1, col2 = st.columns(2)
