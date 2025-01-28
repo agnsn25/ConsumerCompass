@@ -1,92 +1,90 @@
 import pandas as pd
 import numpy as np
+import googlemaps
+import os
+from datetime import datetime
 
-# Mock data generation for businesses
-def generate_mock_data():
-    businesses = {
-        'Business Name': [
-            'Joe\'s Coffee Shop', 'Central Cafe', 'Morning Brew',
-            'Pizza Palace', 'Burger Joint', 'Sushi Express',
-            'Taco Town', 'Thai Delight', 'Indian Spices',
-            'French Bistro'
-        ],
-        'Average Rating': [
-            4.5, 4.2, 4.7, 4.3, 4.1, 4.8, 4.4, 4.6, 4.2, 4.9
-        ],
-        'Total Reviews': [
-            np.random.randint(50, 500) for _ in range(10)
-        ]
-    }
-    
-    df = pd.DataFrame(businesses)
-    
-    # Generate rating distributions
-    for business in range(len(df)):
-        total = df.loc[business, 'Total Reviews']
-        avg = df.loc[business, 'Average Rating']
-        
-        # Create a somewhat realistic distribution around the average
-        distribution = np.random.normal(avg, 0.5, total)
-        distribution = np.clip(distribution, 1, 5)
-        
-        df.loc[business, '5_star'] = np.sum(distribution >= 4.5) / total * 100
-        df.loc[business, '4_star'] = np.sum((distribution >= 3.5) & (distribution < 4.5)) / total * 100
-        df.loc[business, '3_star'] = np.sum((distribution >= 2.5) & (distribution < 3.5)) / total * 100
-        df.loc[business, '2_star'] = np.sum((distribution >= 1.5) & (distribution < 2.5)) / total * 100
-        df.loc[business, '1_star'] = np.sum(distribution < 1.5) / total * 100
-    
-    return df
+# Initialize Google Maps client
+gmaps = googlemaps.Client(key=os.environ['GOOGLE_PLACES_API_KEY'])
 
-# Sample review highlights
-REVIEW_HIGHLIGHTS = {
-    'Joe\'s Coffee Shop': [
-        "Great atmosphere and friendly staff",
-        "Best coffee in town",
-        "Cozy environment"
-    ],
-    'Central Cafe': [
-        "Decent food but slow service",
-        "Nice outdoor seating",
-        "Good value for money"
-    ],
-    'Morning Brew': [
-        "Amazing breakfast options",
-        "Quick service",
-        "Fresh ingredients"
-    ],
-    'Pizza Palace': [
-        "Authentic Italian taste",
-        "Large portions",
-        "Great value"
-    ],
-    'Burger Joint': [
-        "Juicy burgers",
-        "Fast service",
-        "Good variety"
-    ],
-    'Sushi Express': [
-        "Fresh fish",
-        "Creative rolls",
-        "Excellent presentation"
-    ],
-    'Taco Town': [
-        "Authentic Mexican flavors",
-        "Generous portions",
-        "Friendly staff"
-    ],
-    'Thai Delight': [
-        "Spicy and flavorful",
-        "Beautiful decor",
-        "Great service"
-    ],
-    'Indian Spices': [
-        "Rich flavors",
-        "Authentic cuisine",
-        "Friendly atmosphere"
-    ],
-    'French Bistro': [
-        "Excellent wine selection",
-        "Romantic atmosphere",
-        "Outstanding service"
-    ]
-}
+def search_businesses(query, location=None):
+    """Search for businesses using Google Places API"""
+    try:
+        # If location is not provided, use the query as is
+        if location:
+            search_query = f"{query} in {location}"
+        else:
+            search_query = query
+
+        # Perform the places search
+        places_result = gmaps.places(search_query)
+
+        if not places_result['results']:
+            return pd.DataFrame()
+
+        businesses = []
+        for place in places_result['results']:
+            # Get place details for more information
+            place_details = gmaps.place(place['place_id'])['result']
+
+            # Extract business data
+            business = {
+                'Business Name': place['name'],
+                'Average Rating': place.get('rating', 0),
+                'Total Reviews': place.get('user_ratings_total', 0),
+                'Address': place.get('formatted_address', ''),
+                'Place ID': place['place_id']
+            }
+
+            # Get rating distribution if available in details
+            reviews = place_details.get('reviews', [])
+            ratings = [review['rating'] for review in reviews]
+
+            if ratings:
+                total = len(ratings)
+                business.update({
+                    '5_star': sum(1 for r in ratings if r == 5) / total * 100,
+                    '4_star': sum(1 for r in ratings if r == 4) / total * 100,
+                    '3_star': sum(1 for r in ratings if r == 3) / total * 100,
+                    '2_star': sum(1 for r in ratings if r == 2) / total * 100,
+                    '1_star': sum(1 for r in ratings if r == 1) / total * 100,
+                })
+            else:
+                # If no reviews available, set equal distribution
+                business.update({
+                    '5_star': 0,
+                    '4_star': 0,
+                    '3_star': 0,
+                    '2_star': 0,
+                    '1_star': 0,
+                })
+
+            businesses.append(business)
+
+        return pd.DataFrame(businesses)
+    except Exception as e:
+        print(f"Error searching businesses: {str(e)}")
+        return pd.DataFrame()
+
+def get_review_highlights(place_id):
+    """Get review highlights for a specific business"""
+    try:
+        place_details = gmaps.place(place_id)['result']
+        reviews = place_details.get('reviews', [])
+
+        # Sort reviews by rating and get the top 3 most helpful
+        sorted_reviews = sorted(reviews, key=lambda x: (x.get('rating', 0), x.get('time', 0)), reverse=True)
+        highlights = [review['text'][:200] + '...' if len(review['text']) > 200 else review['text']
+                     for review in sorted_reviews[:3]]
+
+        return highlights if highlights else ["No review highlights available"]
+    except Exception as e:
+        print(f"Error getting review highlights: {str(e)}")
+        return ["No review highlights available"]
+
+#Example Usage
+# df = search_businesses("restaurants", "New York City")
+# print(df)
+
+# highlights = get_review_highlights("ChIJrTLr-GyuEmsRBfy61i59si0") # Replace with actual Place ID
+# print(highlights)
