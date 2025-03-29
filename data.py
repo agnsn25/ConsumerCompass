@@ -205,8 +205,8 @@ def get_business_image(place_id):
         if not gmaps and not initialize_gmaps():
             return None
             
-        # Get place details with the photo reference
-        place_details = gmaps.place(place_id, fields=['photos', 'name'])['result']
+        # Get place details with photo field
+        place_details = gmaps.place(place_id, fields=['photo'])['result']
         photos = place_details.get('photos', [])
         
         if not photos:
