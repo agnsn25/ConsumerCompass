@@ -57,7 +57,7 @@ def display_business_metrics(data, business_name):
         """, unsafe_allow_html=True)
 
     # Responsive charts
-    st.plotly_chart(create_rating_distribution_chart(data, business_name), use_container_width=True)
+    st.plotly_chart(create_rating_distribution_chart(data, business_name), use_container_width=True, key=f"rating_chart_{business_name}")
 
     st.subheader("Review Highlights")
     highlights = get_review_highlights(business['Place ID'])
@@ -143,7 +143,7 @@ def display_comparison(data, business1, business2):
         <h3 style="margin: 0 0 10px 0; text-align: center;">Comparison Chart</h3>
     </div>
     """, unsafe_allow_html=True)
-    st.plotly_chart(create_comparison_radar_chart(data, business1, business2), use_container_width=True)
+    st.plotly_chart(create_comparison_radar_chart(data, business1, business2), use_container_width=True, key=f"comparison_chart_{business1}_{business2}")
     
     # Get place IDs for both businesses
     business1_place_id = business1_data.iloc[0]['Place ID']
