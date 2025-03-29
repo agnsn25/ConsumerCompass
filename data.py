@@ -142,7 +142,8 @@ def search_businesses(query, location=None):
                     'Average Rating': place.get('rating', 0),
                     'Total Reviews': place.get('user_ratings_total', 0),
                     'Address': place.get('formatted_address', ''),
-                    'Place ID': place['place_id']
+                    'Place ID': place['place_id'],
+                    'Website': place_details.get('website', '')
                 }
 
                 # Get rating distribution if available in details
