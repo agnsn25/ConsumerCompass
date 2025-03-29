@@ -197,3 +197,33 @@ def get_review_highlights(place_id):
     except Exception as e:
         print(f"Error getting review highlights: {str(e)}")
         return ["Error fetching review highlights"]
+
+def get_business_image(place_id):
+    """Get the primary photo for a business using its place_id"""
+    global gmaps
+    try:
+        if not gmaps and not initialize_gmaps():
+            return None
+            
+        # Get place details with the photo reference
+        place_details = gmaps.place(place_id, fields=['photos', 'name'])['result']
+        photos = place_details.get('photos', [])
+        
+        if not photos:
+            print(f"No photos available for place_id: {place_id}")
+            return None
+            
+        # Get the first (primary) photo reference
+        photo_reference = photos[0].get('photo_reference')
+        if not photo_reference:
+            print(f"No photo reference found for place_id: {place_id}")
+            return None
+            
+        # Get the photo URL from the API (max width 400 for better display)
+        # This URL will work directly in an img tag
+        photo_url = f"https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference={photo_reference}&key={os.environ.get('GOOGLE_PLACES_API_KEY')}"
+        return photo_url
+        
+    except Exception as e:
+        print(f"Error getting business image: {str(e)}")
+        return None

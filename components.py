@@ -1,7 +1,7 @@
 import streamlit as st
 import plotly.express as px
 from utils import create_rating_distribution_chart, create_comparison_radar_chart
-from data import get_review_highlights
+from data import get_review_highlights, get_business_image
 
 def display_business_metrics(data, business_name):
     """Display key metrics for a single business"""
@@ -127,3 +127,88 @@ def display_comparison(data, business1, business2):
     </div>
     """, unsafe_allow_html=True)
     st.plotly_chart(create_comparison_radar_chart(data, business1, business2), use_container_width=True)
+    
+    # Get place IDs for both businesses
+    business1_place_id = business1_data.iloc[0]['Place ID']
+    business2_place_id = business2_data.iloc[0]['Place ID']
+    
+    # Get business images
+    business1_image = get_business_image(business1_place_id)
+    business2_image = get_business_image(business2_place_id)
+    
+    # Display business images section header
+    st.markdown("""
+    <div style="background-color: #f0f2f6; padding: 10px; border-radius: 10px; margin-top: 20px;">
+        <h3 style="margin: 0 0 10px 0; text-align: center;">Business Images</h3>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # Check if we have images for both businesses
+    if business1_image or business2_image:
+        # Create responsive layout for images
+        if screen_width <= 768:  # Mobile view - stack vertically
+            # First business image
+            if business1_image:
+                st.markdown(f"""
+                <div style="background-color: #e6f7ff; padding: 10px; border-radius: 5px; margin-top: 10px; text-align: center;">
+                    <h4 style="margin: 0 0 10px 0;">{business1}</h4>
+                    <img src="{business1_image}" alt="{business1}" style="max-width: 100%; height: auto; border-radius: 5px; max-height: 300px; object-fit: cover;">
+                </div>
+                """, unsafe_allow_html=True)
+            else:
+                st.markdown(f"""
+                <div style="background-color: #e6f7ff; padding: 10px; border-radius: 5px; margin-top: 10px; text-align: center;">
+                    <h4 style="margin: 0 0 10px 0;">{business1}</h4>
+                    <p>No image available</p>
+                </div>
+                """, unsafe_allow_html=True)
+                
+            # Second business image
+            if business2_image:
+                st.markdown(f"""
+                <div style="background-color: #fff7e6; padding: 10px; border-radius: 5px; margin-top: 10px; text-align: center;">
+                    <h4 style="margin: 0 0 10px 0;">{business2}</h4>
+                    <img src="{business2_image}" alt="{business2}" style="max-width: 100%; height: auto; border-radius: 5px; max-height: 300px; object-fit: cover;">
+                </div>
+                """, unsafe_allow_html=True)
+            else:
+                st.markdown(f"""
+                <div style="background-color: #fff7e6; padding: 10px; border-radius: 5px; margin-top: 10px; text-align: center;">
+                    <h4 style="margin: 0 0 10px 0;">{business2}</h4>
+                    <p>No image available</p>
+                </div>
+                """, unsafe_allow_html=True)
+        else:  # Desktop view - side by side
+            col1, col2 = st.columns(2)
+            with col1:
+                if business1_image:
+                    st.markdown(f"""
+                    <div style="background-color: #e6f7ff; padding: 10px; border-radius: 5px; text-align: center;">
+                        <h4 style="margin: 0 0 10px 0;">{business1}</h4>
+                        <img src="{business1_image}" alt="{business1}" style="max-width: 100%; height: auto; border-radius: 5px; max-height: 250px; object-fit: cover;">
+                    </div>
+                    """, unsafe_allow_html=True)
+                else:
+                    st.markdown(f"""
+                    <div style="background-color: #e6f7ff; padding: 10px; border-radius: 5px; text-align: center;">
+                        <h4 style="margin: 0 0 10px 0;">{business1}</h4>
+                        <p>No image available</p>
+                    </div>
+                    """, unsafe_allow_html=True)
+            with col2:
+                if business2_image:
+                    st.markdown(f"""
+                    <div style="background-color: #fff7e6; padding: 10px; border-radius: 5px; text-align: center;">
+                        <h4 style="margin: 0 0 10px 0;">{business2}</h4>
+                        <img src="{business2_image}" alt="{business2}" style="max-width: 100%; height: auto; border-radius: 5px; max-height: 250px; object-fit: cover;">
+                    </div>
+                    """, unsafe_allow_html=True)
+                else:
+                    st.markdown(f"""
+                    <div style="background-color: #fff7e6; padding: 10px; border-radius: 5px; text-align: center;">
+                        <h4 style="margin: 0 0 10px 0;">{business2}</h4>
+                        <p>No image available</p>
+                    </div>
+                    """, unsafe_allow_html=True)
+    else:
+        st.info("No images available for these businesses")
