@@ -1,7 +1,7 @@
 [project]
-name = "repl-nix-workspace"
+name = "ConsumerCompass"
 version = "0.1.0"
-description = "Add your description here"
+description = "A comprehensive business review comparison tool powered by Google Places API"
 requires-python = ">=3.11"
 dependencies = [
     "googlemaps>=4.10.0",

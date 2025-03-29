@@ -5,8 +5,8 @@ from components import display_comparison
 
 # Page configuration
 st.set_page_config(
-    page_title="Business Review Comparison",
-    page_icon="📊",
+    page_title="ConsumerCompass",
+    page_icon="🧭",
     layout="wide"
 )
 
@@ -19,7 +19,7 @@ if 'business_lookup' not in st.session_state:
     st.session_state.business_lookup = {}
 
 # App title and description
-st.title("📊 Business Review Comparison Tool")
+st.title("🧭 ConsumerCompass")
 st.markdown("""
 Compare ratings and reviews between different businesses to make informed decisions.
 Search for businesses and select two to compare.
@@ -135,6 +135,6 @@ else:
 st.markdown("---")
 st.markdown("""
 <div style='text-align: center'>
-    <p>Powered by Google Places API</p>
+    <p>ConsumerCompass | Powered by Google Places API</p>
 </div>
 """, unsafe_allow_html=True)
