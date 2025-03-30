@@ -64,7 +64,3 @@ This project does **not currently have an open-source license**.
 ### 📝 License Coming Soon
 
 The project owner plans to add an appropriate open-source license soon. If you’re interested in using or contributing to this project, feel free to open an issue or [contact the owner](https://github.com/agnsn25).
-
----
-
-Let me know if you'd like to auto-generate the MIT License text or any other license when you're ready!
